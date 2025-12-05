@@ -97,8 +97,10 @@ switch ($mode) {
         $hall = $_POST['hall'] ?? '';
         $platform = $_POST['platform'] ?? '';
         $slot = $_POST['slot'] ?? '';
+        $chaired_by = $_POST['chaired_by'] ?? '';
+        $chair_person_name = trim($_POST['chair_person_name'] ?? '');
         
-        if ($topic==='' || $date==='' || $hall==='' || $platform==='' || $slot==='') {
+        if ($topic==='' || $date==='' || $hall==='' || $platform==='' || $slot==='' || $chaired_by==='' || $chair_person_name==='') {
             http_response_code(400);
             json_ok(["error"=>"missing_fields"]);
         }
@@ -107,6 +109,12 @@ switch ($mode) {
             !in_array($platform,['webex','bharatvc','zoom','other'],true)) {
             http_response_code(400);
             json_ok(["error"=>"invalid_hall_or_platform"]);
+        }
+        
+        $valid_chaired_by = ['HLEM', 'MOS (LE)', 'Secretary', 'AS', 'AS/FA', 'JS', 'DDG', 'Director', 'DS', 'US/DD/SO/AD', 'Other'];
+        if (!in_array($chaired_by, $valid_chaired_by, true)) {
+            http_response_code(400);
+            json_ok(["error"=>"invalid_chaired_by"]);
         }
         
         if (!preg_match('/^\d{2}:\d{2}-\d{2}:\d{2}$/',$slot)) {
@@ -136,10 +144,10 @@ switch ($mode) {
         }
         
         $stmt = $conn->prepare("
-            INSERT INTO meetings (user_id,topic,hall,platform,start_time,end_time,status)
-            VALUES (?,?,?,?,?,?, 'current')
+            INSERT INTO meetings (user_id,topic,hall,platform,start_time,end_time,chaired_by,chair_person_name,status)
+            VALUES (?,?,?,?,?,?,?,?, 'current')
         ");
-        $stmt->bind_param("isssss",$_SESSION['user_id'],$topic,$hall,$platform,$start,$end);
+        $stmt->bind_param("isssssss",$_SESSION['user_id'],$topic,$hall,$platform,$start,$end,$chaired_by,$chair_person_name);
         $stmt->execute();
         json_ok(["success"=>true,"meeting_id"=>$stmt->insert_id]);
         break;
@@ -183,7 +191,7 @@ switch ($mode) {
         require_login();
         $uid = $_SESSION['user_id'];
         $res = $conn->query("
-            SELECT id,topic,hall,platform,start_time,end_time,status,meeting_link
+            SELECT id,topic,hall,platform,start_time,end_time,chaired_by,chair_person_name,status,meeting_link
             FROM meetings
             WHERE user_id=$uid
             ORDER BY start_time DESC

@@ -91,17 +91,68 @@ th,td{padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left;}
 th{background:#f9fafb;font-weight:600;}
 .login-center{max-width:420px;margin:40px auto 10px;}
 
-/* mobile: stack admin rows as cards, no horizontal scroll */
+/* Mobile card layout for history tables */
+.meeting-card {
+  display: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #f9fafb;
+}
+.meeting-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+.meeting-card-row:last-child {
+  border-bottom: none;
+}
+.meeting-card-label {
+  font-weight: 600;
+  color: #6b7280;
+  flex-shrink: 0;
+  margin-right: 10px;
+}
+.meeting-card-value {
+  color: #111827;
+  text-align: right;
+  word-break: break-word;
+}
+.join-link-btn {
+  display: inline-block;
+  background: linear-gradient(90deg,#2563ff,#4f46e5);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
 @media(max-width:900px){
   body{padding:12px;}
   .shell{padding:18px 12px 20px;border-radius:24px;}
   .headline-title{font-size:20px;}
   .primary-btn, .ghost-btn{
-    padding:7px 12px;
-    font-size:12px;
+    padding:11px 18px;
+    font-size:14px;
+    min-height:44px;
   }
   .card{padding:16px;}
   .booking-layout{grid-template-columns:1fr;}
+
+  .history-table-wrap table {
+    display: none;
+  }
+  
+  .meeting-card {
+    display: block;
+  }
 
   .table-wrap{
     width:100%;
@@ -119,21 +170,58 @@ th{background:#f9fafb;font-weight:600;}
   .table-wrap tr{
     border:1px solid #e5e7eb;
     border-radius:12px;
-    margin-bottom:10px;
-    padding:6px 8px;
+    margin-bottom:12px;
+    padding:12px;
     background:#f9fafb;
   }
   .table-wrap td{
     border:none;
-    padding:4px 6px;
-    font-size:12px;
+    padding:8px 0;
+    font-size:14px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
   }
   .table-wrap td::before{
     content:attr(data-label);
     display:block;
     font-weight:600;
     color:#6b7280;
-    margin-bottom:1px;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-bottom:4px;
+  }
+  
+  .table-wrap button.ghost-btn,
+  .table-wrap button.primary-btn {
+    width:100%;
+    padding:12px 18px;
+    font-size:14px;
+    min-height:44px;
+    justify-content:center;
+  }
+  
+  .table-wrap input[type="text"].adm-link {
+    width:100%;
+    padding:12px;
+    font-size:14px;
+    min-height:44px;
+    margin-bottom:8px;
+  }
+  
+  .table-wrap select.adm-status {
+    width:100%;
+    padding:12px;
+    font-size:14px;
+    min-height:44px;
+  }
+  
+  .mobile-btn-group {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    width:100%;
   }
 }
 </style>
@@ -182,74 +270,87 @@ th{background:#f9fafb;font-weight:600;}
 <?php elseif($role === 'admin'): ?>
   <!-- ADMIN PANEL -->
   <div class="headline">
-    <div class="headline-title">Admin panel</div>
-    <div class="headline-sub">Manage users and MoLE VC meetings.</div>
+    <div class="headline-title">Admin Panel</div>
+    <div class="headline-sub">Manage users, meetings, and help tickets.</div>
   </div>
 
-  <div class="card">
-    <div class="section-label">Add new user</div>
-    <div id="addUserMsg" class="text-danger" style="display:none;"></div>
-    <div id="addUserOk" class="text-success" style="display:none;"></div>
-    <form id="addUserForm">
-      <div class="input-row">
-        <div class="input-group">
-          <label>User ID</label>
-          <input type="text" name="user_id" required>
-        </div>
-        <div class="input-group">
-          <label>Email</label>
-          <input type="text" name="email" required>
-        </div>
-        <div class="input-group">
-          <label>Password</label>
-          <input type="password" name="password" required>
-        </div>
-        <div class="input-group">
-          <label>Role</label>
-          <select name="role">
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-      </div>
-      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
-        <button class="primary-btn" type="submit">Add user</button>
-      </div>
-    </form>
+  <!-- Admin Tabs -->
+  <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+    <button type="button" class="primary-btn" id="tabAdminUsers">Users</button>
+    <button type="button" class="ghost-btn" id="tabAdminMeetings">Meetings</button>
+    <button type="button" class="ghost-btn" id="tabAdminTickets">Tickets</button>
   </div>
 
-  <div class="card">
-    <div class="section-label">Users</div>
-    <div class="table-wrap">
-      <table id="usersTable">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>User ID</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Toggle</th>
-          </tr>
-        </thead>
-        <tbody id="usersBody"></tbody>
-      </table>
+  <!-- Users Tab -->
+  <div id="cardAdminUsers">
+    <div class="card">
+      <div class="section-label">Add New User</div>
+      <div id="addUserMsg" class="text-danger" style="display:none;"></div>
+      <div id="addUserOk" class="text-success" style="display:none;"></div>
+      <form id="addUserForm">
+        <div class="input-row">
+          <div class="input-group">
+            <label>User ID</label>
+            <input type="text" name="user_id" required>
+          </div>
+          <div class="input-group">
+            <label>Email</label>
+            <input type="text" name="email" required>
+          </div>
+          <div class="input-group">
+            <label>Password</label>
+            <input type="password" name="password" required>
+          </div>
+          <div class="input-group">
+            <label>Role</label>
+            <select name="role">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+          <button class="primary-btn" type="submit">Add User</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="section-label">All Users</div>
+      <div class="table-wrap">
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>User ID</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="section-label">All meetings</div>
+  <!-- Meetings Tab -->
+  <div class="card" id="cardAdminMeetings" style="display:none;">
+    <div class="section-label">All Meetings</div>
     <div class="table-wrap">
       <table id="adminMeetings">
         <thead>
           <tr>
             <th>ID</th>
             <th>User</th>
-            <th>Date/time</th>
+            <th>Date/Time</th>
             <th>Hall</th>
             <th>Platform</th>
+            <th>Chaired By</th>
+            <th>Chair Person</th>
             <th>Status</th>
-            <th>VC link / Update</th>
+            <th>VC Link / Update</th>
           </tr>
         </thead>
         <tbody id="adminMeetingsBody"></tbody>
@@ -257,23 +358,44 @@ th{background:#f9fafb;font-weight:600;}
     </div>
   </div>
 
+  <!-- Tickets Tab -->
+  <div class="card" id="cardAdminTickets" style="display:none;">
+    <div class="section-label">Help Tickets</div>
+    <div class="table-wrap">
+      <table id="helpTicketsTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Issue Type</th>
+            <th>Message</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="helpTicketsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
 <?php else: ?>
   <!-- USER DASHBOARD -->
   <div class="headline">
-    <div class="headline-title">Schedule meeting</div>
+    <div class="headline-title">Schedule Meeting</div>
     <div class="headline-sub">Welcome, <?=htmlspecialchars($user_code)?> – book MoLE VC slots.</div>
   </div>
 
   <!-- Tabs: New meeting / My meetings / Help -->
   <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
-    <button type="button" class="primary-btn" id="tabNew">New meeting</button>
-    <button type="button" class="ghost-btn" id="tabMy">My meetings</button>
-    <button type="button" class="ghost-btn" id="tabHelp">Support</button>
+    <button type="button" class="primary-btn" id="tabNew">New Meeting</button>
+    <button type="button" class="ghost-btn" id="tabMy">My Meetings</button>
+    <button type="button" class="ghost-btn" id="tabHelp">Help</button>
   </div>
 
   <!-- New meeting card -->
   <div class="card" id="cardNew">
-    <div class="section-label">New meeting</div>
+    <div class="section-label">New Meeting</div>
     <div id="bookMsg" class="text-danger" style="display:none;"></div>
     <div id="bookOk" class="text-success" style="display:none;"></div>
 
@@ -316,6 +438,29 @@ th{background:#f9fafb;font-weight:600;}
         </div>
       </div>
       <div class="input-row">
+        <div class="input-group">
+          <label>Chaired By</label>
+          <select name="chaired_by" required>
+            <option value="">Select</option>
+            <option value="HLEM">HLEM</option>
+            <option value="MOS (LE)">MOS (LE)</option>
+            <option value="Secretary">Secretary</option>
+            <option value="AS">AS</option>
+            <option value="AS/FA">AS/FA</option>
+            <option value="JS">JS</option>
+            <option value="DDG">DDG</option>
+            <option value="Director">Director</option>
+            <option value="DS">DS</option>
+            <option value="US/DD/SO/AD">US/DD/SO/AD</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="input-group" style="flex:2;">
+          <label>Chair Person Name</label>
+          <input type="text" name="chair_person_name" placeholder="Enter chair person's full name" required>
+        </div>
+      </div>
+      <div class="input-row">
         <div class="input-group" style="max-width:220px;">
           <label>Date</label>
           <input type="date" id="date" name="date" min="<?=date('Y-m-d')?>" required>
@@ -343,7 +488,7 @@ th{background:#f9fafb;font-weight:600;}
         </div>
 
         <div class="slot-column">
-          <div class="section-label" style="margin-bottom:0;">Time slots</div>
+          <div class="section-label" style="margin-bottom:0;">Time Slots</div>
           <small style="color:var(--muted);margin-bottom:6px;">Max 2 meetings per hall per slot; red = full.</small>
           <input type="hidden" name="slot" id="slotInput" required>
           <div class="slot-grid" id="slotGrid"></div>
@@ -358,8 +503,8 @@ th{background:#f9fafb;font-weight:600;}
 
   <!-- My meetings card -->
   <div class="card" id="cardMy" style="display:none;">
-    <div class="section-label">My meetings</div>
-    <div style="display:flex;gap:10px;margin-bottom:12px;">
+    <div class="section-label">My Meetings</div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
       <button class="ghost-btn" type="button" onclick="showHistory('current')">Current</button>
       <button class="ghost-btn" type="button" onclick="showHistory('previous')">Previous</button>
       <button class="ghost-btn" type="button" onclick="showHistory('cancelled')">Cancelled</button>
@@ -371,7 +516,7 @@ th{background:#f9fafb;font-weight:600;}
 
   <!-- Help card -->
   <div class="card" id="cardHelp" style="display:none;">
-    <div class="section-label">Help / Raise ticket</div>
+    <div class="section-label">Help / Raise Ticket</div>
     <p style="font-size:13px;color:#6b7280;margin-bottom:10px;">
       Select issue type and describe your problem. Support will contact you shortly.
     </p>
@@ -381,10 +526,12 @@ th{background:#f9fafb;font-weight:600;}
     <form id="helpForm">
       <div class="input-row">
         <div class="input-group">
-          <label>Issue type</label>
+          <label>Issue Type</label>
           <select name="issue_type" id="issue_type" required>
             <option value="">Select</option>
-            <option value="forget_password">Forget password</option>
+            <option value="vc_issue">VC Issue</option>
+            <option value="forget_password">Forget Password</option>
+            <option value="other">Other</option>
           </select>
         </div>
       </div>
@@ -395,7 +542,7 @@ th{background:#f9fafb;font-weight:600;}
         </div>
       </div>
       <div style="margin-top:12px;display:flex;justify-content:flex-end;">
-        <button type="submit" class="primary-btn">Submit ticket</button>
+        <button type="submit" class="primary-btn">Submit Ticket</button>
       </div>
     </form>
   </div>
@@ -430,6 +577,8 @@ if (!loggedIn) {
 if (loggedIn && isAdmin){
   loadAdminUsers();
   loadAdminMeetings();
+  loadHelpTickets();
+  
   const addForm = document.getElementById('addUserForm');
   if (addForm){
     addForm.addEventListener('submit', async (e)=>{
@@ -452,6 +601,43 @@ if (loggedIn && isAdmin){
       }
     });
   }
+  
+  // Admin Tab Switching
+  const tabAdminUsers = document.getElementById('tabAdminUsers');
+  const tabAdminMeetings = document.getElementById('tabAdminMeetings');
+  const tabAdminTickets = document.getElementById('tabAdminTickets');
+  const cardAdminUsers = document.getElementById('cardAdminUsers');
+  const cardAdminMeetings = document.getElementById('cardAdminMeetings');
+  const cardAdminTickets = document.getElementById('cardAdminTickets');
+  
+  function setAdminTabButton(activeBtn){
+    [tabAdminUsers, tabAdminMeetings, tabAdminTickets].forEach(btn=>{
+      if (!btn) return;
+      btn.classList.remove('primary-btn');
+      btn.classList.add('ghost-btn');
+    });
+    if (activeBtn){
+      activeBtn.classList.remove('ghost-btn');
+      activeBtn.classList.add('primary-btn');
+    }
+  }
+  
+  function activateAdminTab(which){
+    cardAdminUsers.style.display = (which==='users') ? 'block' : 'none';
+    cardAdminMeetings.style.display = (which==='meetings') ? 'block' : 'none';
+    cardAdminTickets.style.display = (which==='tickets') ? 'block' : 'none';
+    
+    if (which==='users') setAdminTabButton(tabAdminUsers);
+    if (which==='meetings') setAdminTabButton(tabAdminMeetings);
+    if (which==='tickets') setAdminTabButton(tabAdminTickets);
+  }
+  
+  tabAdminUsers.addEventListener('click', ()=>activateAdminTab('users'));
+  tabAdminMeetings.addEventListener('click', ()=>activateAdminTab('meetings'));
+  tabAdminTickets.addEventListener('click', ()=>activateAdminTab('tickets'));
+  
+  // Start with users tab
+  activateAdminTab('users');
 }
 
 async function loadAdminUsers(){
@@ -474,11 +660,11 @@ async function loadAdminUsers(){
       <td data-label="Email">${u.email}</td>
       <td data-label="Role">${u.role}</td>
       <td data-label="Status">${u.status}</td>
-      <td data-label="Toggle">
-        ${u.role === 'admin' ? '-' :
-          `<button class="ghost-btn" style="padding:4px 10px;font-size:12px;"
+      <td data-label="Action">
+        ${u.role === 'admin' ? '<span style="color:#9ca3af;">Admin user</span>' :
+          `<button class="ghost-btn" style="padding:10px 16px;font-size:13px;min-height:44px;width:100%;"
                    onclick="toggleUser(${u.id})">
-             ${u.status === 'active' ? 'Disable' : 'Enable'}
+             ${u.status === 'active' ? 'Disable User' : 'Enable User'}
            </button>`}
       </td>
     </tr>`).join('');
@@ -503,11 +689,11 @@ async function loadAdminMeetings(){
   const r = await fetch('api.php?mode=admin_meetings');
   const d = await r.json();
   if (!r.ok || d.error){
-    body.innerHTML = `<tr><td colspan="7" style="color:#b91c1c;font-size:13px;">${d.error || 'Failed to load meetings'}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="9" style="color:#b91c1c;font-size:13px;">${d.error || 'Failed to load meetings'}</td></tr>`;
     return;
   }
   if (!d.length){
-    body.innerHTML = `<tr><td colspan="7" style="color:#6b7280;font-size:13px;">No meetings yet.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="9" style="color:#6b7280;font-size:13px;">No meetings yet.</td></tr>`;
     return;
   }
   body.innerHTML = d.map(m=>{
@@ -519,9 +705,11 @@ async function loadAdminMeetings(){
       <tr>
         <td data-label="ID">${m.id}</td>
         <td data-label="User">${m.user_id}</td>
-        <td data-label="Date/time">${m.start_time}</td>
+        <td data-label="Date/Time">${m.start_time}</td>
         <td data-label="Hall">${hallText}</td>
         <td data-label="Platform">${m.platform.toUpperCase()}</td>
+        <td data-label="Chaired By">${m.chaired_by || '-'}</td>
+        <td data-label="Chair Person">${m.chair_person_name || '-'}</td>
         <td data-label="Status">
           <select data-mid="${m.id}" class="adm-status">
             <option value="current"  ${m.status==='current'?'selected':''}>Current</option>
@@ -529,17 +717,63 @@ async function loadAdminMeetings(){
             <option value="cancelled"${m.status==='cancelled'?'selected':''}>Cancelled</option>
           </select>
         </td>
-        <td data-label="VC link / Update">
+        <td data-label="VC Link / Update">
           <input type="text" class="adm-link" data-mid="${m.id}"
                  value="${m.meeting_link ? m.meeting_link : ''}"
-                 placeholder="https://...">
-          <button class="primary-btn" style="padding:4px 10px;font-size:12px;"
-                  onclick="saveAdminLink(${m.id})">Save</button>
-          <button class="ghost-btn" style="padding:4px 10px;font-size:12px;margin-left:4px;"
-                  onclick="endMeetingNow(${m.id})">End now</button>
+                 placeholder="https://..." style="margin-bottom:8px;">
+          <div class="mobile-btn-group">
+            <button class="primary-btn" style="padding:10px 16px;font-size:13px;min-height:44px;"
+                    onclick="saveAdminLink(${m.id})">Save Link & Status</button>
+            <button class="ghost-btn" style="padding:10px 16px;font-size:13px;min-height:44px;"
+                    onclick="endMeetingNow(${m.id})">End Meeting Now</button>
+          </div>
         </td>
       </tr>`;
   }).join('');
+}
+
+async function loadHelpTickets(){
+  const body = document.getElementById('helpTicketsBody');
+  if (!body) return;
+  const r = await fetch('api.php?mode=help_list');
+  const d = await r.json();
+  if (!r.ok || d.error){
+    body.innerHTML = `<tr><td colspan="7" style="color:#b91c1c;font-size:13px;">${d.error || 'Failed to load tickets'}</td></tr>`;
+    return;
+  }
+  if (!d.length){
+    body.innerHTML = `<tr><td colspan="7" style="color:#6b7280;font-size:13px;">No help tickets.</td></tr>`;
+    return;
+  }
+  body.innerHTML = d.map(t=>`
+    <tr>
+      <td data-label="ID">${t.id}</td>
+      <td data-label="User">${t.user_code || 'Guest'}</td>
+      <td data-label="Issue Type">${t.issue_type.replace('_', ' ')}</td>
+      <td data-label="Message" style="max-width:200px;word-break:break-word;">${t.message}</td>
+      <td data-label="Status">${t.status}</td>
+      <td data-label="Created">${t.created_at}</td>
+      <td data-label="Action">
+        ${t.status === 'open' ? 
+          `<button class="ghost-btn" style="padding:10px 16px;font-size:13px;min-height:44px;width:100%;"
+                   onclick="closeTicket(${t.id})">Close Ticket</button>` : 
+          '<span style="color:#16a34a;font-weight:600;">Closed</span>'}
+      </td>
+    </tr>`).join('');
+}
+
+async function closeTicket(id){
+  if (!confirm('Close this ticket?')) return;
+  const fd = new FormData();
+  fd.append('mode','help_close');
+  fd.append('ticket_id',id);
+  const r = await fetch('api.php',{method:'POST',body:fd});
+  const d = await r.json();
+  if (!r.ok || d.error){
+    alert(d.error || 'Failed to close ticket');
+  } else {
+    loadHelpTickets();
+  }
 }
 
 async function saveAdminLink(id){
@@ -750,22 +984,70 @@ function renderHistTable(tab,data){
     container.innerHTML = `<p style="font-size:13px;color:#6b7280;">No ${tab} meetings.</p>`;
     return;
   }
-  let html = '<table><tr><th>When</th><th>Hall</th><th>Platform</th><th>Topic</th><th>Link</th></tr>';
+  
+  // Desktop table view
+  let tableHtml = '<div class="history-table-wrap"><table><tr><th>When</th><th>Hall</th><th>Platform</th><th>Chaired By</th><th>Chair Person</th><th>Topic</th><th>Link</th></tr>';
+  
+  // Mobile card view
+  let cardHtml = '';
+  
   data.forEach(r=>{
     let hallText = 'New Sabha Ghar';
     if (r.hall === 'main_community_hall') hallText = 'Main community hall';
     else if (r.hall === 'chamber') hallText = 'Chamber';
     else if (r.hall === 'online') hallText = 'Online';
-    html += `<tr>
+    
+    const linkDisplay = r.meeting_link ? 
+      `<a target="_blank" href="${r.meeting_link}" class="join-link-btn">Join Meeting</a>` : 
+      '<span style="color:#6b7280;">Pending</span>';
+    
+    // Desktop table row
+    tableHtml += `<tr>
       <td>${r.start_time}</td>
       <td>${hallText}</td>
       <td>${r.platform.toUpperCase()}</td>
+      <td>${r.chaired_by || '-'}</td>
+      <td>${r.chair_person_name || '-'}</td>
       <td>${r.topic}</td>
-      <td>${r.meeting_link ? `<a target="_blank" href="${r.meeting_link}">Join</a>` : 'Pending admin'}</td>
+      <td>${linkDisplay}</td>
     </tr>`;
+    
+    // Mobile card
+    cardHtml += `
+      <div class="meeting-card">
+        <div class="meeting-card-row">
+          <span class="meeting-card-label">When:</span>
+          <span class="meeting-card-value">${r.start_time}</span>
+        </div>
+        <div class="meeting-card-row">
+          <span class="meeting-card-label">Hall:</span>
+          <span class="meeting-card-value">${hallText}</span>
+        </div>
+        <div class="meeting-card-row">
+          <span class="meeting-card-label">Platform:</span>
+          <span class="meeting-card-value">${r.platform.toUpperCase()}</span>
+        </div>
+        <div class="meeting-card-row">
+          <span class="meeting-card-label">Chaired By:</span>
+          <span class="meeting-card-value">${r.chaired_by || '-'}</span>
+        </div>
+        <div class="meeting-card-row">
+          <span class="meeting-card-label">Chair Person:</span>
+          <span class="meeting-card-value">${r.chair_person_name || '-'}</span>
+        </div>
+        <div class="meeting-card-row">
+          <span class="meeting-card-label">Topic:</span>
+          <span class="meeting-card-value">${r.topic}</span>
+        </div>
+        <div class="meeting-card-row">
+          <span class="meeting-card-label">Link:</span>
+          <span class="meeting-card-value">${linkDisplay}</span>
+        </div>
+      </div>`;
   });
-  html += '</table>';
-  container.innerHTML = html;
+  
+  tableHtml += '</table></div>';
+  container.innerHTML = tableHtml + cardHtml;
 }
 
 function showHistory(tab){
